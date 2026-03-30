@@ -1,0 +1,83 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: knowledgeChunks
+    // Document ID: auto-generated or custom
+    // Fields:
+    //   - id: string (required) - unique identifier
+    //   - title: string (required) - short title for the info
+    //   - content: string (required) - the actual knowledge content
+    //   - tags: list of strings (optional) - tags for categorization
+    //   - createdAt: number (required) - creation timestamp
+    //   - updatedAt: number (required) - last update timestamp
+    //   - userId: string (required) - the user who owns this knowledge
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isValidKnowledgeChunk(data) {
+      let allowedFields = ['id', 'title', 'content', 'userId', 'createdAt', 'updatedAt', 'category', 'tags', 'fileType', 'fileName'];
+      let requiredFields = ['id', 'title', 'content', 'userId', 'createdAt', 'updatedAt', 'category'];
+      
+      return data.keys().hasAll(requiredFields) &&
+             data.keys().hasOnly(allowedFields) &&
+             data.id is string && data.id.size() > 0 && data.id.size() < 100 &&
+             data.title is string && data.title.size() > 0 && data.title.size() < 200 &&
+             data.content is string && data.content.size() > 0 && data.content.size() < 10000 &&
+             data.category is string && data.category.size() > 0 && data.category.size() < 100 &&
+             data.userId is string && data.userId == request.auth.uid &&
+             data.createdAt is number &&
+             data.updatedAt is number &&
+             (!('tags' in data) || (data.tags is list && data.tags.size() <= 10)) &&
+             (!('fileType' in data) || (data.fileType is string && data.fileType.size() < 100)) &&
+             (!('fileName' in data) || (data.fileName is string && data.fileName.size() < 255));
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+          (request.auth.token.email == "Edusupport@ep-asia.com" && request.auth.token.email_verified == true)); // Default admin
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /knowledgeChunks/{chunkId} {
+      // Users can only read their own knowledge chunks
+      allow read: if isOwner(resource.data.userId);
+      
+      // Users can only create their own knowledge chunks
+      allow create: if isAuthenticated() && isValidKnowledgeChunk(request.resource.data) && isOwner(request.resource.data.userId);
+      
+      // Users can only update their own knowledge chunks
+      allow update: if isOwner(resource.data.userId) && 
+                      isValidKnowledgeChunk(request.resource.data) && 
+                      request.resource.data.userId == resource.data.userId &&
+                      request.resource.data.createdAt == resource.data.createdAt;
+      
+      // Users can only delete their own knowledge chunks
+      allow delete: if isOwner(resource.data.userId);
+    }
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create, update: if isOwner(userId) && (!('role' in request.resource.data) || request.resource.data.role == 'user' || isAdmin());
+    }
+  }
+}

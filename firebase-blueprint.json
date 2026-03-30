@@ -1,0 +1,26 @@
+{
+  "entities": {
+    "knowledgeChunks": {
+      "title": "Knowledge Chunk",
+      "description": "A piece of information used to train the AI.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier" },
+        "title": { "type": "string", "description": "Short title for the info" },
+        "content": { "type": "string", "description": "The actual knowledge content" },
+        "category": { "type": "string", "description": "Primary category (e.g., CFF, Schedule)" },
+        "tags": { "type": "array", "items": { "type": "string" }, "description": "Tags for categorization" },
+        "createdAt": { "type": "number", "description": "Creation timestamp" },
+        "updatedAt": { "type": "number", "description": "Last update timestamp" },
+        "userId": { "type": "string", "description": "The user who owns this knowledge" }
+      },
+      "required": ["id", "title", "content", "category", "userId"]
+    }
+  },
+  "firestore": {
+    "/knowledgeChunks/{chunkId}": {
+      "schema": "knowledgeChunks",
+      "description": "User-managed knowledge base for the chatbot."
+    }
+  }
+}
