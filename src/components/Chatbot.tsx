@@ -111,10 +111,14 @@ export default function Chatbot({ userId }: Props) {
               If the answer is not in the knowledge base, politely inform the user that you don't have that information yet.
               
               KNOWLEDGE BASE:
-              ${knowledge.map(k => `--- ${k.category}: ${k.title} ---\n${k.content}`).join('\n\n')}
+              ${knowledge.map(k => `--- ${k.category}: ${k.title} ${k.imageData ? '(HAS_IMAGE)' : ''} ---\n${k.content}`).join('\n\n')}
               
               USER QUESTION:
               ${input}
+              
+              INSTRUCTIONS:
+              1. Answer based ONLY on the knowledge base.
+              2. If a chunk has (HAS_IMAGE), and you use its information, include the tag [IMAGE:Title of Chunk] in your response where appropriate.
             ` }]
           }
         ],
@@ -124,11 +128,29 @@ export default function Chatbot({ userId }: Props) {
       });
 
       const response = await model;
+      const content = response.text || "I'm sorry, I couldn't generate a response.";
+      
+      // Extract images from the response tags
+      const images: string[] = [];
+      const imageRegex = /\[IMAGE:(.*?)\]/g;
+      let match;
+      while ((match = imageRegex.exec(content)) !== null) {
+        const title = match[1].trim();
+        const chunk = knowledge.find(k => k.title === title && k.imageData);
+        if (chunk?.imageData) {
+          images.push(chunk.imageData);
+        }
+      }
+
+      // Clean the content from tags
+      const cleanedContent = content.replace(/\[IMAGE:.*?\]/g, '').trim();
+
       const aiMessage: ChatMessage = {
         id: crypto.randomUUID(),
         role: 'model',
-        content: response.text || "I'm sorry, I couldn't generate a response.",
+        content: cleanedContent || "I've found some relevant images for you.",
         timestamp: Date.now(),
+        images: images.length > 0 ? images : undefined,
       };
 
       setMessages(prev => [...prev, aiMessage]);
@@ -168,21 +190,37 @@ export default function Chatbot({ userId }: Props) {
             "flex w-full animate-in slide-in-from-bottom-2 duration-300",
             msg.role === 'user' ? "justify-end" : "justify-start"
           )}>
-            <div className={cn(
-              "max-w-[75%] p-5 rounded-2xl flex gap-4 shadow-sm",
-              msg.role === 'user' 
-                ? "bg-indigo-600 text-white rounded-tr-none" 
-                : "bg-white border border-slate-200 text-slate-900 rounded-tl-none"
-            )}>
-              <div className="flex-shrink-0 mt-1">
-                {msg.role === 'user' ? <User size={18} /> : <Bot size={18} className="text-indigo-600" />}
-              </div>
+            <div className="flex flex-col gap-3 max-w-[75%]">
               <div className={cn(
-                "prose prose-sm max-w-none",
-                msg.role === 'user' ? "prose-invert" : "prose-slate"
+                "p-5 rounded-2xl flex gap-4 shadow-sm w-full",
+                msg.role === 'user' 
+                  ? "bg-indigo-600 text-white rounded-tr-none" 
+                  : "bg-white border border-slate-200 text-slate-900 rounded-tl-none"
               )}>
-                <ReactMarkdown>{msg.content}</ReactMarkdown>
+                <div className="flex-shrink-0 mt-1">
+                  {msg.role === 'user' ? <User size={18} /> : <Bot size={18} className="text-indigo-600" />}
+                </div>
+                <div className={cn(
+                  "prose prose-sm max-w-none",
+                  msg.role === 'user' ? "prose-invert" : "prose-slate"
+                )}>
+                  <ReactMarkdown>{msg.content}</ReactMarkdown>
+                </div>
               </div>
+              {msg.images && msg.images.length > 0 && (
+                <div className="flex flex-wrap gap-3">
+                  {msg.images.map((img, idx) => (
+                    <div key={idx} className="relative group max-w-[300px] rounded-2xl overflow-hidden border border-slate-200 shadow-sm bg-white animate-in zoom-in-95 duration-300">
+                      <img 
+                        src={img} 
+                        alt={`Relevant image ${idx + 1}`} 
+                        className="w-full h-auto object-contain max-h-[300px]"
+                        referrerPolicy="no-referrer"
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         ))}

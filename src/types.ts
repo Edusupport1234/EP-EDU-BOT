@@ -9,6 +9,7 @@ export interface KnowledgeChunk {
   userId: string;
   fileType?: string;
   fileName?: string;
+  imageData?: string;
 }
 
 export interface ChatMessage {
@@ -16,4 +17,5 @@ export interface ChatMessage {
   role: 'user' | 'model';
   content: string;
   timestamp: number;
+  images?: string[];
 }

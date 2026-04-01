@@ -54,19 +54,19 @@ export default function App() {
             <ShieldCheck className="text-indigo-600" size={32} />
           </div>
           <div className="space-y-2">
-            <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Enterprise Knowledge AI</h1>
-            <p className="text-slate-500">Securely train and deploy a custom AI assistant for your organization.</p>
+            <h1 className="text-3xl font-bold text-slate-900 tracking-tight">Knowledge AI Assistant</h1>
+            <p className="text-slate-500">Train and deploy your own custom AI assistant using your documents and images.</p>
           </div>
           <button 
             onClick={handleLogin}
             className="w-full flex items-center justify-center gap-3 bg-indigo-600 text-white py-3.5 rounded-xl hover:bg-indigo-700 transition-all font-semibold shadow-sm"
           >
             <LogIn size={18} />
-            <span>Sign in with SSO</span>
+            <span>Sign in with Google</span>
           </button>
           <div className="flex items-center justify-center gap-2 text-[11px] text-slate-400 font-medium uppercase tracking-wider">
             <ShieldCheck size={12} />
-            <span>Enterprise-Grade Security</span>
+            <span>Secure Access for All Users</span>
           </div>
         </div>
       </div>

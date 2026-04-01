@@ -12,7 +12,8 @@
         "tags": { "type": "array", "items": { "type": "string" }, "description": "Tags for categorization" },
         "createdAt": { "type": "number", "description": "Creation timestamp" },
         "updatedAt": { "type": "number", "description": "Last update timestamp" },
-        "userId": { "type": "string", "description": "The user who owns this knowledge" }
+        "userId": { "type": "string", "description": "The user who owns this knowledge" },
+        "imageData": { "type": "string", "description": "Base64 encoded image data" }
       },
       "required": ["id", "title", "content", "category", "userId"]
     }

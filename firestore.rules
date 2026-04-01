@@ -16,6 +16,7 @@ service cloud.firestore {
     //   - createdAt: number (required) - creation timestamp
     //   - updatedAt: number (required) - last update timestamp
     //   - userId: string (required) - the user who owns this knowledge
+    //   - imageData: string (optional) - base64 encoded image data
     //
     // ===============================================================
 
@@ -31,7 +32,7 @@ service cloud.firestore {
     }
 
     function isValidKnowledgeChunk(data) {
-      let allowedFields = ['id', 'title', 'content', 'userId', 'createdAt', 'updatedAt', 'category', 'tags', 'fileType', 'fileName'];
+      let allowedFields = ['id', 'title', 'content', 'userId', 'createdAt', 'updatedAt', 'category', 'tags', 'fileType', 'fileName', 'imageData'];
       let requiredFields = ['id', 'title', 'content', 'userId', 'createdAt', 'updatedAt', 'category'];
       
       return data.keys().hasAll(requiredFields) &&
@@ -45,7 +46,8 @@ service cloud.firestore {
              data.updatedAt is number &&
              (!('tags' in data) || (data.tags is list && data.tags.size() <= 10)) &&
              (!('fileType' in data) || (data.fileType is string && data.fileType.size() < 100)) &&
-             (!('fileName' in data) || (data.fileName is string && data.fileName.size() < 255));
+             (!('fileName' in data) || (data.fileName is string && data.fileName.size() < 255)) &&
+             (!('imageData' in data) || (data.imageData is string && data.imageData.size() < 2000000)); // ~1.5MB limit for base64
     }
 
     function isAdmin() {

@@ -76,7 +76,8 @@ export default function KnowledgeBaseManager({ userId }: Props) {
     category: 'General',
     tags: '',
     fileType: '',
-    fileName: ''
+    fileName: '',
+    imageData: ''
   });
 
   const [confirmDelete, setConfirmDelete] = useState<{ type: 'chunk' | 'category', id?: string, name?: string, count?: number } | null>(null);
@@ -151,7 +152,8 @@ export default function KnowledgeBaseManager({ userId }: Props) {
           title: prev.title || file.name.split('.')[0],
           content: response.text || "Failed to extract text.",
           fileType: file.type,
-          fileName: file.name
+          fileName: file.name,
+          imageData: file.type.startsWith('image/') ? `data:${file.type};base64,${base64Data}` : prev.imageData
         }));
         setIsExtracting(false);
       };
@@ -180,13 +182,14 @@ export default function KnowledgeBaseManager({ userId }: Props) {
       updatedAt: now,
       fileType: formData.fileType || undefined,
       fileName: formData.fileName || undefined,
+      imageData: formData.imageData || undefined,
     };
 
     try {
       await setDoc(doc(db, 'knowledgeChunks', id), newChunk);
       setIsAdding(false);
       setEditingChunk(null);
-      setFormData({ title: '', content: '', category: 'General', tags: '', fileType: '', fileName: '' });
+      setFormData({ title: '', content: '', category: 'General', tags: '', fileType: '', fileName: '', imageData: '' });
     } catch (error) {
       handleFirestoreError(error, OperationType.WRITE, `knowledgeChunks/${id}`);
     }
@@ -316,7 +319,8 @@ export default function KnowledgeBaseManager({ userId }: Props) {
                               category: chunk.category || 'General',
                               tags: chunk.tags.join(', '),
                               fileType: chunk.fileType || '',
-                              fileName: chunk.fileName || ''
+                              fileName: chunk.fileName || '',
+                              imageData: chunk.imageData || ''
                             });
                             setIsAdding(true);
                           }}
@@ -331,6 +335,17 @@ export default function KnowledgeBaseManager({ userId }: Props) {
                           <Trash2 size={14} />
                         </button>
                       </div>
+
+                      {chunk.imageData && (
+                        <div className="mb-4 rounded-xl overflow-hidden border border-slate-100 aspect-video bg-slate-50">
+                          <img 
+                            src={chunk.imageData} 
+                            alt={chunk.title} 
+                            className="w-full h-full object-cover"
+                            referrerPolicy="no-referrer"
+                          />
+                        </div>
+                      )}
 
                       <div className="mb-4">
                         <h4 className="text-base font-bold text-slate-900 mb-1.5">{chunk.title}</h4>
@@ -450,8 +465,43 @@ export default function KnowledgeBaseManager({ userId }: Props) {
                 />
               </div>
 
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">Tags</label>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">Reference Image (Optional)</label>
+                  <div className="flex items-center gap-4">
+                    {formData.imageData ? (
+                      <div className="relative w-24 h-24 rounded-xl overflow-hidden border border-slate-200 group">
+                        <img 
+                          src={formData.imageData} 
+                          alt="Preview" 
+                          className="w-full h-full object-cover"
+                          referrerPolicy="no-referrer"
+                        />
+                        <button 
+                          type="button"
+                          onClick={() => setFormData({ ...formData, imageData: '' })}
+                          className="absolute inset-0 bg-red-600/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    ) : (
+                      <button 
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="w-24 h-24 rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400 hover:border-indigo-500 hover:text-indigo-600 transition-all"
+                      >
+                        <Upload size={20} />
+                        <span className="text-[10px] font-bold mt-1">Upload</span>
+                      </button>
+                    )}
+                    <div className="flex-1 text-[11px] text-slate-500 italic">
+                      Upload an image to be stored with this entry. This image will be shown by the chatbot when this topic is discussed.
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">Tags</label>
                 <input 
                   type="text"
                   value={formData.tags}
