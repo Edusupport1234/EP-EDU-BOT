@@ -41,11 +41,11 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
   const errInfo: FirestoreErrorInfo = {
     error: error instanceof Error ? error.message : String(error),
     authInfo: {
-      userId: auth.currentUser?.uid || 'default-user',
-      email: auth.currentUser?.email || 'anonymous@example.com',
-      emailVerified: auth.currentUser?.emailVerified || false,
-      isAnonymous: auth.currentUser?.isAnonymous || true,
-      tenantId: auth.currentUser?.tenantId || null,
+      userId: auth.currentUser?.uid,
+      email: auth.currentUser?.email,
+      emailVerified: auth.currentUser?.emailVerified,
+      isAnonymous: auth.currentUser?.isAnonymous,
+      tenantId: auth.currentUser?.tenantId,
       providerInfo: auth.currentUser?.providerData.map(provider => ({
         providerId: provider.providerId,
         displayName: provider.displayName,
@@ -180,10 +180,11 @@ export default function KnowledgeBaseManager({ userId }: Props) {
       userId,
       createdAt: editingChunk?.createdAt || now,
       updatedAt: now,
-      fileType: formData.fileType || undefined,
-      fileName: formData.fileName || undefined,
-      imageData: formData.imageData || undefined,
     };
+
+    if (formData.fileType) newChunk.fileType = formData.fileType;
+    if (formData.fileName) newChunk.fileName = formData.fileName;
+    if (formData.imageData) newChunk.imageData = formData.imageData;
 
     try {
       await setDoc(doc(db, 'knowledgeChunks', id), newChunk);
