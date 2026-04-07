@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { GoogleGenAI } from "@google/genai";
 import { db, collection, query, where, onSnapshot, auth } from '../firebase';
 import { KnowledgeChunk, ChatMessage } from '../types';
 import { Send, Bot, User, Loader2, Sparkles } from 'lucide-react';
@@ -41,11 +42,11 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
   const errInfo: FirestoreErrorInfo = {
     error: error instanceof Error ? error.message : String(error),
     authInfo: {
-      userId: auth.currentUser?.uid || 'default-user',
-      email: auth.currentUser?.email || 'anonymous@example.com',
-      emailVerified: auth.currentUser?.emailVerified || false,
-      isAnonymous: auth.currentUser?.isAnonymous || true,
-      tenantId: auth.currentUser?.tenantId || null,
+      userId: auth.currentUser?.uid,
+      email: auth.currentUser?.email,
+      emailVerified: auth.currentUser?.emailVerified,
+      isAnonymous: auth.currentUser?.isAnonymous,
+      tenantId: auth.currentUser?.tenantId,
       providerInfo: auth.currentUser?.providerData.map(provider => ({
         providerId: provider.providerId,
         displayName: provider.displayName,
@@ -99,57 +100,45 @@ export default function Chatbot({ userId }: Props) {
     setIsLoading(true);
 
     try {
-      const history = messages.map(m => ({
-        role: m.role,
-        parts: [{ text: m.content }]
-      }));
-
-      const systemInstruction = `
-        You are a helpful AI assistant. Answer the user's question based ONLY on the provided knowledge base below.
-        If the answer is not in the knowledge base, politely inform the user that you don't have that information yet.
-        
-        KNOWLEDGE BASE:
-        ${knowledge.map(k => `--- ${k.category}: ${k.title} ${k.imageData ? '(HAS_IMAGE)' : ''} ---\n${k.content}`).join('\n\n')}
-        
-        INSTRUCTIONS:
-        1. Answer based ONLY on the knowledge base.
-        2. If a chunk has (HAS_IMAGE), and you use its information, include the tag [IMAGE:Title of Chunk] in your response where appropriate.
-      `;
-
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: input, history, systemInstruction })
+      const apiKey = process.env.GEMINI_API_KEY || (import.meta as any).env?.VITE_GEMINI_API_KEY;
+      if (!apiKey) {
+        throw new Error("Gemini API key not found. Please set GEMINI_API_KEY or VITE_GEMINI_API_KEY.");
+      }
+      const ai = new GoogleGenAI({ apiKey });
+      const model = ai.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: [
+          {
+            role: "user",
+            parts: [{ text: `
+              You are a helpful AI assistant. Answer the user's question based ONLY on the provided knowledge base below.
+              If the answer is not in the knowledge base, politely inform the user that you don't have that information yet.
+              
+              KNOWLEDGE BASE:
+              ${knowledge.map(k => `--- ${k.category}: ${k.title} ---\nSUMMARY: ${k.summary}\nCONTENT: ${k.content}`).join('\n\n')}
+              
+              USER QUESTION:
+              ${input}
+              
+              INSTRUCTIONS:
+              1. Answer based ONLY on the knowledge base.
+              2. Use the SUMMARY to quickly identify context and the CONTENT for detailed answers.
+            ` }]
+          }
+        ],
+        config: {
+          systemInstruction: "You are a precise AI assistant that strictly follows the provided knowledge context. Keep answers concise and professional.",
+        }
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to generate response');
-      }
-      const data = await response.json();
-      const content = data.text || "I'm sorry, I couldn't generate a response.";
+      const response = await model;
+      const content = response.text || "I'm sorry, I couldn't generate a response.";
       
-      // Extract images from the response tags
-      const images: string[] = [];
-      const imageRegex = /\[IMAGE:(.*?)\]/g;
-      let match;
-      while ((match = imageRegex.exec(content)) !== null) {
-        const title = match[1].trim();
-        const chunk = knowledge.find(k => k.title === title && k.imageData);
-        if (chunk?.imageData) {
-          images.push(chunk.imageData);
-        }
-      }
-
-      // Clean the content from tags
-      const cleanedContent = content.replace(/\[IMAGE:.*?\]/g, '').trim();
-
       const aiMessage: ChatMessage = {
         id: crypto.randomUUID(),
         role: 'model',
-        content: cleanedContent || "I've found some relevant images for you.",
+        content: content.trim(),
         timestamp: Date.now(),
-        images: images.length > 0 ? images : undefined,
       };
 
       setMessages(prev => [...prev, aiMessage]);

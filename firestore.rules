@@ -32,14 +32,15 @@ service cloud.firestore {
     }
 
     function isValidKnowledgeChunk(data) {
-      let allowedFields = ['id', 'title', 'content', 'userId', 'createdAt', 'updatedAt', 'category', 'tags', 'fileType', 'fileName', 'imageData'];
-      let requiredFields = ['id', 'title', 'content', 'userId', 'createdAt', 'updatedAt', 'category'];
+      let allowedFields = ['id', 'title', 'content', 'summary', 'userId', 'createdAt', 'updatedAt', 'category', 'tags', 'fileType', 'fileName', 'imageData'];
+      let requiredFields = ['id', 'title', 'content', 'summary', 'userId', 'createdAt', 'updatedAt', 'category'];
       
       return data.keys().hasAll(requiredFields) &&
              data.keys().hasOnly(allowedFields) &&
              data.id is string && data.id.size() > 0 && data.id.size() < 100 &&
              data.title is string && data.title.size() > 0 && data.title.size() < 200 &&
              data.content is string && data.content.size() > 0 && data.content.size() < 10000 &&
+             data.summary is string && data.summary.size() > 0 && data.summary.size() < 1000 &&
              data.category is string && data.category.size() > 0 && data.category.size() < 100 &&
              data.userId is string && (data.userId == "default-user" || (isAuthenticated() && data.userId == request.auth.uid)) &&
              data.createdAt is number &&
@@ -80,6 +81,10 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if isOwner(userId) || isAdmin();
       allow create, update: if isOwner(userId) && (!('role' in request.resource.data) || request.resource.data.role == 'user' || isAdmin());
+    }
+
+    match /test/connection {
+      allow read: if true;
     }
   }
 }

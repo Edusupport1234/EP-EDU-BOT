@@ -68,11 +68,13 @@ export default function KnowledgeBaseManager({ userId }: Props) {
   const [editingChunk, setEditingChunk] = useState<KnowledgeChunk | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [isExtracting, setIsExtracting] = useState(false);
+  const [extractionStatus, setExtractionStatus] = useState<string>('Extracting...');
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({ 'CFF': true, 'Schedule': true });
   
   const [formData, setFormData] = useState({ 
     title: '', 
     content: '', 
+    summary: '',
     category: 'General',
     tags: '',
     fileType: '',
@@ -129,37 +131,91 @@ export default function KnowledgeBaseManager({ userId }: Props) {
     if (!file) return;
 
     setIsExtracting(true);
+    setExtractionStatus('Resizing image...');
     try {
-      const reader = new FileReader();
-      reader.onload = async (event) => {
-        const base64Data = (event.target?.result as string).split(',')[1];
-        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
-        
-        const response = await ai.models.generateContent({
-          model: "gemini-3-flash-preview",
-          contents: [
-            {
-              parts: [
-                { inlineData: { data: base64Data, mimeType: file.type } },
-                { text: "Extract all the text and key information from this file. Format it clearly as a knowledge base article. Do not include any conversational filler." }
-              ]
-            }
-          ]
-        });
+      const resizeImage = (file: File): Promise<string> => {
+        return new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const img = new Image();
+            img.onload = () => {
+              const canvas = document.createElement('canvas');
+              let width = img.width;
+              let height = img.height;
+              const maxDim = 1024;
 
-        setFormData(prev => ({
-          ...prev,
-          title: prev.title || file.name.split('.')[0],
-          content: response.text || "Failed to extract text.",
-          fileType: file.type,
-          fileName: file.name,
-          imageData: file.type.startsWith('image/') ? `data:${file.type};base64,${base64Data}` : prev.imageData
-        }));
-        setIsExtracting(false);
+              if (width > height && width > maxDim) {
+                height *= maxDim / width;
+                width = maxDim;
+              } else if (height > maxDim) {
+                width *= maxDim / height;
+                height = maxDim;
+              }
+
+              canvas.width = width;
+              canvas.height = height;
+              const ctx = canvas.getContext('2d');
+              ctx?.drawImage(img, 0, 0, width, height);
+              resolve(canvas.toDataURL('image/jpeg', 0.7).split(',')[1]);
+            };
+            img.src = e.target?.result as string;
+          };
+          reader.readAsDataURL(file);
+        });
       };
-      reader.readAsDataURL(file);
+
+      let base64Data: string;
+      if (file.type.startsWith('image/')) {
+        base64Data = await resizeImage(file);
+      } else {
+        setExtractionStatus('Reading file...');
+        const reader = new FileReader();
+        base64Data = await new Promise((resolve) => {
+          reader.onload = (e) => resolve((e.target?.result as string).split(',')[1]);
+          reader.readAsDataURL(file);
+        });
+      }
+
+      const apiKey = process.env.GEMINI_API_KEY || (import.meta as any).env?.VITE_GEMINI_API_KEY;
+      if (!apiKey) {
+        throw new Error("Gemini API key not found. Please set GEMINI_API_KEY or VITE_GEMINI_API_KEY.");
+      }
+      
+      const ai = new GoogleGenAI({ apiKey });
+      
+      setExtractionStatus('Analyzing with AI...');
+      const response = await ai.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: [
+          {
+            parts: [
+              { inlineData: { data: base64Data, mimeType: file.type.startsWith('image/') ? 'image/jpeg' : file.type } },
+              { text: "Extract all the text and key information from this file. Format it clearly as a knowledge base article. Also, provide a concise 1-2 sentence summary of the content. Format your response as: ARTICLE: [article text] SUMMARY: [summary text]" }
+            ]
+          }
+        ]
+      });
+
+      const fullText = response.text || "";
+      const articleMatch = fullText.match(/ARTICLE:([\s\S]*?)(?=SUMMARY:|$)/i);
+      const summaryMatch = fullText.match(/SUMMARY:([\s\S]*?)$/i);
+
+      const extractedContent = articleMatch ? articleMatch[1].trim() : fullText;
+      const extractedSummary = summaryMatch ? summaryMatch[1].trim() : "No summary available.";
+
+      setFormData(prev => ({
+        ...prev,
+        title: prev.title || file.name.split('.')[0],
+        content: extractedContent,
+        summary: extractedSummary,
+        fileType: file.type.startsWith('image/') ? 'image/jpeg' : file.type,
+        fileName: file.name,
+        imageData: file.type.startsWith('image/') ? `data:image/jpeg;base64,${base64Data}` : prev.imageData
+      }));
     } catch (error) {
       console.error('File extraction error:', error);
+      alert(error instanceof Error ? error.message : "Failed to process file. Please try a smaller file.");
+    } finally {
       setIsExtracting(false);
     }
   };
@@ -168,13 +224,14 @@ export default function KnowledgeBaseManager({ userId }: Props) {
     e.preventDefault();
     if (!formData.title || !formData.content) return;
 
-    const id = editingChunk?.id || crypto.randomUUID();
+    const id = editingChunk?.id || (formData.title.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '') || crypto.randomUUID());
     const now = Date.now();
     
     const newChunk: KnowledgeChunk = {
       id,
       title: formData.title,
       content: formData.content,
+      summary: formData.summary,
       category: formData.category,
       tags: formData.tags.split(',').map(t => t.trim()).filter(t => t),
       userId,
@@ -184,13 +241,13 @@ export default function KnowledgeBaseManager({ userId }: Props) {
 
     if (formData.fileType) newChunk.fileType = formData.fileType;
     if (formData.fileName) newChunk.fileName = formData.fileName;
-    if (formData.imageData) newChunk.imageData = formData.imageData;
+    // imageData is removed from saving as per user request
 
     try {
       await setDoc(doc(db, 'knowledgeChunks', id), newChunk);
       setIsAdding(false);
       setEditingChunk(null);
-      setFormData({ title: '', content: '', category: 'General', tags: '', fileType: '', fileName: '', imageData: '' });
+      setFormData({ title: '', content: '', summary: '', category: 'General', tags: '', fileType: '', fileName: '', imageData: '' });
     } catch (error) {
       handleFirestoreError(error, OperationType.WRITE, `knowledgeChunks/${id}`);
     }
@@ -317,6 +374,7 @@ export default function KnowledgeBaseManager({ userId }: Props) {
                             setFormData({ 
                               title: chunk.title, 
                               content: chunk.content, 
+                              summary: chunk.summary || '',
                               category: chunk.category || 'General',
                               tags: chunk.tags.join(', '),
                               fileType: chunk.fileType || '',
@@ -350,10 +408,16 @@ export default function KnowledgeBaseManager({ userId }: Props) {
 
                       <div className="mb-4">
                         <h4 className="text-base font-bold text-slate-900 mb-1.5">{chunk.title}</h4>
-                        <div className="flex items-center gap-2 text-[11px] text-slate-400 font-medium">
+                        <div className="flex items-center gap-2 text-[11px] text-slate-400 font-medium mb-2">
                           <FileText size={12} />
                           <span>Updated {new Date(chunk.updatedAt).toLocaleDateString()}</span>
                         </div>
+                        {chunk.summary && (
+                          <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 mb-4">
+                            <p className="text-[11px] font-bold text-indigo-600 uppercase tracking-wider mb-1">Summary</p>
+                            <p className="text-xs text-slate-600 italic line-clamp-2">{chunk.summary}</p>
+                          </div>
+                        )}
                       </div>
 
                       <p className="text-slate-600 text-sm line-clamp-3 mb-6 leading-relaxed">
@@ -446,7 +510,7 @@ export default function KnowledgeBaseManager({ userId }: Props) {
                     className="flex items-center gap-1.5 text-[11px] font-bold text-indigo-600 hover:text-indigo-700 transition-colors disabled:opacity-50"
                   >
                     {isExtracting ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />}
-                    {isExtracting ? 'Extracting...' : 'Upload Document'}
+                    {isExtracting ? extractionStatus : 'Upload Document'}
                   </button>
                   <input 
                     type="file" 
@@ -466,43 +530,20 @@ export default function KnowledgeBaseManager({ userId }: Props) {
                 />
               </div>
 
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">Reference Image (Optional)</label>
-                  <div className="flex items-center gap-4">
-                    {formData.imageData ? (
-                      <div className="relative w-24 h-24 rounded-xl overflow-hidden border border-slate-200 group">
-                        <img 
-                          src={formData.imageData} 
-                          alt="Preview" 
-                          className="w-full h-full object-cover"
-                          referrerPolicy="no-referrer"
-                        />
-                        <button 
-                          type="button"
-                          onClick={() => setFormData({ ...formData, imageData: '' })}
-                          className="absolute inset-0 bg-red-600/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    ) : (
-                      <button 
-                        type="button"
-                        onClick={() => fileInputRef.current?.click()}
-                        className="w-24 h-24 rounded-xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-slate-400 hover:border-indigo-500 hover:text-indigo-600 transition-all"
-                      >
-                        <Upload size={20} />
-                        <span className="text-[10px] font-bold mt-1">Upload</span>
-                      </button>
-                    )}
-                    <div className="flex-1 text-[11px] text-slate-500 italic">
-                      Upload an image to be stored with this entry. This image will be shown by the chatbot when this topic is discussed.
-                    </div>
-                  </div>
-                </div>
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">Summary</label>
+                <textarea 
+                  required
+                  rows={3}
+                  value={formData.summary}
+                  onChange={(e) => setFormData({ ...formData, summary: e.target.value })}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none resize-none text-sm leading-relaxed"
+                  placeholder="A brief summary of the content..."
+                />
+              </div>
 
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">Tags</label>
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">Tags</label>
                 <input 
                   type="text"
                   value={formData.tags}

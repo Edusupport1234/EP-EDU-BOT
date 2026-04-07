@@ -8,14 +8,16 @@
         "id": { "type": "string", "description": "Unique identifier" },
         "title": { "type": "string", "description": "Short title for the info" },
         "content": { "type": "string", "description": "The actual knowledge content" },
+        "summary": { "type": "string", "description": "A brief summary of the content" },
         "category": { "type": "string", "description": "Primary category (e.g., CFF, Schedule)" },
         "tags": { "type": "array", "items": { "type": "string" }, "description": "Tags for categorization" },
         "createdAt": { "type": "number", "description": "Creation timestamp" },
         "updatedAt": { "type": "number", "description": "Last update timestamp" },
         "userId": { "type": "string", "description": "The user who owns this knowledge" },
-        "imageData": { "type": "string", "description": "Base64 encoded image data" }
+        "fileType": { "type": "string", "description": "The MIME type of the uploaded file" },
+        "fileName": { "type": "string", "description": "The name of the uploaded file" }
       },
-      "required": ["id", "title", "content", "category", "userId"]
+      "required": ["id", "title", "content", "summary", "category", "userId"]
     }
   },
   "firestore": {

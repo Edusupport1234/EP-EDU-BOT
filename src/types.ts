@@ -2,6 +2,7 @@ export interface KnowledgeChunk {
   id: string;
   title: string;
   content: string;
+  summary: string;
   category: string;
   tags: string[];
   createdAt: number;
