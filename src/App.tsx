@@ -92,59 +92,60 @@ export default function App() {
   const userId = user.uid;
 
   return (
-    <div className="h-screen w-full flex bg-slate-50 overflow-hidden font-sans">
-      {/* Modern Sidebar */}
-      <nav className="w-20 bg-white border-r border-slate-200 flex flex-col items-center py-6 justify-between z-20 shadow-sm">
-        <div className="flex flex-col items-center gap-8">
-          <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg">
-            <Sparkles size={20} />
+    <div className="h-screen w-full flex bg-paper overflow-hidden font-sans selection:bg-accent/10 selection:text-accent">
+      {/* Minimalist Sidebar */}
+      <nav className="w-24 bg-white border-r-4 border-ink flex flex-col items-center py-10 justify-between z-20">
+        <div className="flex flex-col items-center gap-12">
+          <div className="w-14 h-14 bg-ink flex items-center justify-center text-paper shadow-[4px_4px_0px_0px_rgba(90,90,64,1)] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all duration-200 cursor-pointer">
+            <Sparkles size={32} strokeWidth={2} />
           </div>
           
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-8">
             <button 
               onClick={() => setActiveTab('knowledge')}
               className={cn(
-                "p-3.5 rounded-xl transition-all group relative",
-                activeTab === 'knowledge' ? "bg-indigo-50 text-indigo-600" : "text-slate-400 hover:bg-slate-50 hover:text-slate-600"
+                "p-4 transition-all duration-200 relative group border-2",
+                activeTab === 'knowledge' ? "bg-accent text-paper border-ink shadow-[4px_4px_0px_0px_rgba(26,26,26,1)]" : "text-slate-300 border-transparent hover:text-ink hover:border-ink"
               )}
             >
-              <Database size={22} />
-              <span className="absolute left-full ml-4 px-2 py-1 bg-slate-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none font-medium">Repository</span>
+              <Database size={28} strokeWidth={2} />
+              <div className={cn(
+                "absolute left-full ml-8 px-4 py-2 bg-ink text-paper text-xs rounded-none opacity-0 group-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none font-bold tracking-widest uppercase translate-x-[-10px] group-hover:translate-x-0 shadow-[4px_4px_0px_0px_rgba(90,90,64,1)]",
+              )}>Repository</div>
             </button>
             
             <button 
               onClick={() => setActiveTab('chat')}
               className={cn(
-                "p-3.5 rounded-xl transition-all group relative",
-                activeTab === 'chat' ? "bg-indigo-50 text-indigo-600" : "text-slate-400 hover:bg-slate-50 hover:text-slate-600"
+                "p-4 transition-all duration-200 relative group border-2",
+                activeTab === 'chat' ? "bg-accent text-paper border-ink shadow-[4px_4px_0px_0px_rgba(26,26,26,1)]" : "text-slate-300 border-transparent hover:text-ink hover:border-ink"
               )}
             >
-              <MessageSquare size={22} />
-              <span className="absolute left-full ml-4 px-2 py-1 bg-slate-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none font-medium">Assistant</span>
+              <MessageSquare size={28} strokeWidth={2} />
+              <div className={cn(
+                "absolute left-full ml-8 px-4 py-2 bg-ink text-paper text-xs rounded-none opacity-0 group-hover:opacity-100 transition-all duration-200 whitespace-nowrap pointer-events-none font-bold tracking-widest uppercase translate-x-[-10px] group-hover:translate-x-0 shadow-[4px_4px_0px_0px_rgba(90,90,64,1)]",
+              )}>Assistant</div>
             </button>
           </div>
         </div>
 
-        <div className="flex flex-col items-center gap-6">
+        <div className="flex flex-col items-center gap-10">
           <button 
             onClick={handleLogout}
-            className="p-3.5 rounded-xl text-slate-400 hover:bg-red-50 hover:text-red-600 transition-all group relative"
+            className="p-4 bg-white border-4 border-ink text-slate-300 hover:text-red-500 shadow-[4px_4px_0px_0px_rgba(26,26,26,1)] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all duration-200 group relative"
+            title="Terminate Session"
           >
-            <LogOut size={22} />
-            <span className="absolute left-full ml-4 px-2 py-1 bg-slate-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none font-medium">Logout</span>
+            <LogOut size={28} strokeWidth={3} />
           </button>
           
-          <div className="relative group">
+          <div className="relative group cursor-pointer">
             {user.photoURL ? (
-              <img src={user.photoURL} alt={user.displayName || ''} className="w-9 h-9 rounded-full border border-slate-200" referrerPolicy="no-referrer" />
+              <img src={user.photoURL} alt={user.displayName || ''} className="w-12 h-12 border-4 border-ink grayscale hover:grayscale-0 transition-all duration-200" referrerPolicy="no-referrer" />
             ) : (
-              <div className="w-9 h-9 rounded-full bg-indigo-100 border border-slate-200 flex items-center justify-center text-indigo-600 font-bold text-xs">
+              <div className="w-12 h-12 bg-accent text-paper border-4 border-ink flex items-center justify-center font-bold text-xl">
                 {user.displayName?.charAt(0) || 'U'}
               </div>
             )}
-            <div className="absolute left-full ml-4 px-2 py-1 bg-slate-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none font-medium">
-              {user.displayName || 'User'}
-            </div>
           </div>
         </div>
       </nav>
@@ -152,8 +153,8 @@ export default function App() {
       {/* Main Content Area */}
       <main className="flex-1 relative overflow-hidden flex flex-col">
         {connectionError && (
-          <div className="bg-red-50 border-b border-red-100 p-4 flex items-center gap-3 text-red-600 text-sm font-medium animate-in slide-in-from-top duration-300">
-            <AlertCircle size={18} />
+          <div className="bg-red-50/50 backdrop-blur-md border-b border-red-100 p-4 flex items-center gap-4 text-red-600 text-[11px] font-bold uppercase tracking-widest z-30">
+            <AlertCircle size={16} />
             <span>{connectionError}</span>
             <a 
               href={`https://console.firebase.google.com/project/gen-lang-client-0644834933/firestore`} 

@@ -57,9 +57,36 @@ service cloud.firestore {
           (request.auth.token.email == "Edusupport@ep-asia.com" && request.auth.token.email_verified == true)); // Default admin
     }
 
+    function isValidChatSession(data) {
+      let fields = ['id', 'userId', 'title', 'lastMessage', 'updatedAt', 'createdAt'];
+      return data.keys().hasAll(fields) && data.keys().hasOnly(fields) &&
+             data.userId == request.auth.uid &&
+             data.title is string && data.title.size() < 200 &&
+             data.lastMessage is string && data.lastMessage.size() < 1000;
+    }
+
+    function isValidChatMessage(data) {
+      let fields = ['id', 'role', 'content', 'timestamp'];
+      return data.keys().hasAll(fields) && data.keys().hasOnly(fields) &&
+             data.role in ['user', 'model'] &&
+             data.content is string && data.content.size() < 10000;
+    }
+
     // ===============================================================
     // Rules
     // ===============================================================
+
+    match /chatSessions/{sessionId} {
+      allow read, delete: if isAuthenticated() && request.auth.uid == resource.data.userId;
+      allow create: if isAuthenticated() && isValidChatSession(request.resource.data);
+      allow update: if isAuthenticated() && request.auth.uid == resource.data.userId && isValidChatSession(request.resource.data);
+
+      match /messages/{messageId} {
+        allow read: if isAuthenticated() && get(/databases/$(database)/documents/chatSessions/$(sessionId)).data.userId == request.auth.uid;
+        allow create: if isAuthenticated() && get(/databases/$(database)/documents/chatSessions/$(sessionId)).data.userId == request.auth.uid && isValidChatMessage(request.resource.data);
+        allow delete: if isAuthenticated() && get(/databases/$(database)/documents/chatSessions/$(sessionId)).data.userId == request.auth.uid;
+      }
+    }
 
     match /knowledgeChunks/{chunkId} {
       // Users can only read their own knowledge chunks

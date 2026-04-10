@@ -20,3 +20,12 @@ export interface ChatMessage {
   timestamp: number;
   images?: string[];
 }
+
+export interface ChatSession {
+  id: string;
+  userId: string;
+  title: string;
+  lastMessage: string;
+  updatedAt: number;
+  createdAt: number;
+}

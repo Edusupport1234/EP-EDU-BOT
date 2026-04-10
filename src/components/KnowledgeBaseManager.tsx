@@ -294,39 +294,39 @@ export default function KnowledgeBaseManager({ userId }: Props) {
   };
 
   return (
-    <div className="flex flex-col h-full bg-slate-50 p-8 font-sans overflow-y-auto">
-      <div className="flex justify-between items-center mb-10">
-        <div className="space-y-1">
-          <h2 className="text-2xl font-bold text-slate-900 tracking-tight">Knowledge Repository</h2>
-          <p className="text-sm text-slate-500">Manage organizational data and AI training sets.</p>
+    <div className="flex flex-col h-full bg-paper p-12 font-pixel overflow-y-auto selection:bg-accent/10 selection:text-accent">
+      <div className="flex justify-between items-end mb-16">
+        <div className="space-y-4">
+          <h2 className="text-7xl font-bold text-ink tracking-tight uppercase">Repository</h2>
+          <p className="text-sm font-bold text-accent uppercase tracking-[0.3em] opacity-60">Curated Organizational Intelligence</p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex items-center gap-8">
           {hiddenCategories.length > 0 && (
             <button 
               onClick={() => setHiddenCategories([])}
-              className="text-xs font-bold text-indigo-600 hover:text-indigo-700 transition-colors"
+              className="text-xs font-bold text-accent uppercase tracking-widest hover:opacity-60 transition-opacity"
             >
-              Restore Hidden Categories
+              Restore Hidden
             </button>
           )}
           <button 
             onClick={() => setIsAdding(true)}
-            className="flex items-center gap-2 bg-indigo-600 text-white px-5 py-2.5 rounded-xl hover:bg-indigo-700 transition-all shadow-sm font-semibold text-sm"
+            className="flex items-center gap-4 bg-ink text-paper px-10 py-5 rounded-none border-2 border-ink hover:shadow-[4px_4px_0px_0px_rgba(90,90,64,1)] active:translate-x-1 active:translate-y-1 transition-all duration-200 group"
           >
-            <Plus size={18} />
-            <span>Add Entry</span>
+            <Plus size={24} strokeWidth={2} className="group-hover:rotate-90 transition-transform duration-500" />
+            <span className="font-bold text-lg tracking-widest uppercase">New Entry</span>
           </button>
         </div>
       </div>
 
-      <div className="relative mb-10">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+      <div className="relative mb-20 group">
+        <Search className="absolute left-0 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-accent transition-colors" size={24} strokeWidth={2} />
         <input 
           type="text"
-          placeholder="Search by title, content, or category..."
+          placeholder="Search the intelligence base..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full pl-11 pr-4 py-3.5 bg-white border border-slate-200 rounded-xl shadow-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all text-sm"
+          className="w-full pl-12 pr-4 py-6 bg-transparent border-b-4 border-ink focus:border-accent outline-none transition-all duration-500 text-2xl font-bold placeholder:text-slate-200 uppercase"
         />
       </div>
 
@@ -338,36 +338,37 @@ export default function KnowledgeBaseManager({ userId }: Props) {
           const isExpanded = expandedCategories[cat] ?? true;
 
           return (
-            <div key={cat} className="space-y-5 group/cat">
-              <div className="flex items-center justify-between">
+            <div key={cat} className="space-y-10 group/cat">
+              <div className="flex items-center justify-between border-b-2 border-ink pb-6">
                 <button 
                   onClick={() => toggleCategory(cat)}
-                  className="flex items-center gap-2.5 text-slate-900 hover:text-indigo-600 transition-colors"
+                  className="flex items-center gap-6 text-ink hover:text-accent transition-colors group"
                 >
-                  <div className="w-6 h-6 flex items-center justify-center bg-white border border-slate-200 rounded-md shadow-sm">
-                    {isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                  <div className={cn(
+                    "w-10 h-10 flex items-center justify-center border-2 border-ink transition-all duration-300 group-hover:bg-accent group-hover:text-paper",
+                    isExpanded ? "bg-ink text-paper" : "bg-white text-ink"
+                  )}>
+                    {isExpanded ? <ChevronDown size={20} strokeWidth={2} /> : <ChevronRight size={20} strokeWidth={2} />}
                   </div>
-                  <h3 className="text-sm font-bold uppercase tracking-wider flex items-center gap-3">
+                  <h3 className="text-lg font-bold uppercase tracking-[0.4em] flex items-center gap-6">
                     {cat}
-                    <span className="text-[10px] bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full font-mono">{items.length}</span>
+                    <span className="text-sm opacity-40">[{items.length}]</span>
                   </h3>
                 </button>
                 
                 <button 
                   onClick={() => handleDeleteCategory(cat)}
-                  className="opacity-0 group-hover/cat:opacity-100 p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all flex items-center gap-2 text-[10px] font-bold uppercase tracking-tighter"
-                  title={`Remove ${cat} category`}
+                  className="opacity-0 group-hover/cat:opacity-100 p-2 text-slate-300 hover:text-red-500 transition-all text-xs font-bold uppercase tracking-widest"
                 >
-                  <Trash2 size={14} />
-                  <span>Remove Category</span>
+                  Archive Category
                 </button>
               </div>
 
               {isExpanded && (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
                   {items.map(chunk => (
-                    <div key={chunk.id} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hover:border-indigo-500/50 transition-all group relative">
-                      <div className="absolute top-4 right-4 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div key={chunk.id} className="bougie-card p-10 group relative flex flex-col h-full">
+                      <div className="absolute top-8 right-8 flex gap-3 opacity-0 group-hover:opacity-100 transition-all duration-300">
                         <button 
                           onClick={() => {
                             setEditingChunk(chunk);
@@ -383,51 +384,42 @@ export default function KnowledgeBaseManager({ userId }: Props) {
                             });
                             setIsAdding(true);
                           }}
-                          className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all"
+                          className="p-3 bg-white border-2 border-ink text-ink hover:bg-accent hover:text-paper transition-all"
                         >
-                          <Edit2 size={14} />
+                          <Edit2 size={18} strokeWidth={2} />
                         </button>
                         <button 
                           onClick={() => handleDelete(chunk.id)}
-                          className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                          className="p-3 bg-white border-2 border-ink text-ink hover:bg-red-500 hover:text-paper transition-all"
                         >
-                          <Trash2 size={14} />
+                          <Trash2 size={18} strokeWidth={2} />
                         </button>
                       </div>
 
-                      {chunk.imageData && (
-                        <div className="mb-4 rounded-xl overflow-hidden border border-slate-100 aspect-video bg-slate-50">
-                          <img 
-                            src={chunk.imageData} 
-                            alt={chunk.title} 
-                            className="w-full h-full object-cover"
-                            referrerPolicy="no-referrer"
-                          />
+                      <div className="mb-10">
+                        <h4 className="text-3xl font-bold text-ink mb-4 leading-tight uppercase">{chunk.title}</h4>
+                        <div className="flex items-center gap-4 text-xs text-accent font-bold uppercase tracking-widest opacity-60">
+                          <FileText size={14} strokeWidth={2} />
+                          <span>{new Date(chunk.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                        </div>
+                      </div>
+
+                      {chunk.summary && (
+                        <div className="mb-10 p-6 bg-accent/5 border-l-4 border-accent">
+                          <p className="text-base text-slate-600 font-bold leading-relaxed uppercase">
+                            {chunk.summary}
+                          </p>
                         </div>
                       )}
 
-                      <div className="mb-4">
-                        <h4 className="text-base font-bold text-slate-900 mb-1.5">{chunk.title}</h4>
-                        <div className="flex items-center gap-2 text-[11px] text-slate-400 font-medium mb-2">
-                          <FileText size={12} />
-                          <span>Updated {new Date(chunk.updatedAt).toLocaleDateString()}</span>
-                        </div>
-                        {chunk.summary && (
-                          <div className="bg-slate-50 p-3 rounded-lg border border-slate-100 mb-4">
-                            <p className="text-[11px] font-bold text-indigo-600 uppercase tracking-wider mb-1">Summary</p>
-                            <p className="text-xs text-slate-600 italic line-clamp-2">{chunk.summary}</p>
-                          </div>
-                        )}
-                      </div>
-
-                      <p className="text-slate-600 text-sm line-clamp-3 mb-6 leading-relaxed">
+                      <p className="text-slate-500 text-lg line-clamp-4 mb-10 leading-relaxed flex-grow">
                         {chunk.content}
                       </p>
 
-                      <div className="flex flex-wrap gap-1.5">
+                      <div className="flex flex-wrap gap-3 mt-auto">
                         {chunk.tags.map(tag => (
-                          <span key={tag} className="text-[10px] font-semibold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md">
-                            {tag}
+                          <span key={tag} className="text-xs font-bold text-ink uppercase tracking-widest bg-paper border-2 border-ink px-4 py-1.5">
+                            #{tag}
                           </span>
                         ))}
                       </div>
@@ -446,37 +438,36 @@ export default function KnowledgeBaseManager({ userId }: Props) {
       </div>
 
       {isAdding && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl p-8 animate-in fade-in zoom-in duration-200 max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-8">
-              <div className="space-y-1">
-                <h3 className="text-xl font-bold text-slate-900">{editingChunk ? 'Edit Entry' : 'New Knowledge Entry'}</h3>
-                <p className="text-sm text-slate-500">Provide details to enhance the AI's knowledge base.</p>
-              </div>
-              <button onClick={() => { setIsAdding(false); setEditingChunk(null); }} className="p-2 text-slate-400 hover:text-slate-600 transition-colors">
-                <X size={24} />
-              </button>
+        <div className="fixed inset-0 bg-ink/40 backdrop-blur-md flex items-center justify-center p-12 z-50">
+          <div className="bg-white w-full max-w-4xl border-4 border-ink p-16 animate-in fade-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto relative">
+            <button onClick={() => { setIsAdding(false); setEditingChunk(null); }} className="absolute top-12 right-12 p-4 text-slate-300 hover:text-ink transition-colors">
+              <X size={36} strokeWidth={2} />
+            </button>
+
+            <div className="mb-16">
+              <h3 className="text-5xl font-bold text-ink mb-4 uppercase tracking-tight">{editingChunk ? 'Refine Entry' : 'New Intelligence'}</h3>
+              <p className="text-sm font-bold text-accent uppercase tracking-[0.3em] opacity-60">Intelligence Acquisition Protocol</p>
             </div>
 
-            <form onSubmit={handleSave} className="space-y-6">
-              <div className="grid grid-cols-2 gap-5">
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">Category</label>
+            <form onSubmit={handleSave} className="space-y-12">
+              <div className="grid grid-cols-2 gap-16">
+                <div className="space-y-4">
+                  <label className="text-xs font-bold text-ink uppercase tracking-widest opacity-60">Category</label>
                   <select 
                     value={formData.category}
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm font-medium"
+                    className="w-full bg-transparent border-b-4 border-ink py-4 focus:border-accent outline-none transition-all duration-300 text-lg font-bold appearance-none cursor-pointer uppercase"
                   >
                     {allCategories.map(cat => (
                       <option key={cat} value={cat}>{cat}</option>
                     ))}
-                    <option value="custom">+ New Category...</option>
+                    <option value="custom">+ Create New...</option>
                   </select>
                   {formData.category === 'custom' && (
                     <input 
                       type="text"
-                      placeholder="Category name"
-                      className="w-full mt-2 px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm"
+                      placeholder="Define category name..."
+                      className="w-full mt-6 minimal-input uppercase"
                       onBlur={(e) => {
                         if (e.target.value) {
                           setFormData({ ...formData, category: e.target.value });
@@ -487,30 +478,30 @@ export default function KnowledgeBaseManager({ userId }: Props) {
                     />
                   )}
                 </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">Title</label>
+                <div className="space-y-4">
+                  <label className="text-xs font-bold text-ink uppercase tracking-widest opacity-60">Title</label>
                   <input 
                     required
                     type="text"
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm"
-                    placeholder="e.g., Internal Policy"
+                    className="w-full minimal-input uppercase"
+                    placeholder="e.g. Strategic Directive 01"
                   />
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">Content</label>
+              <div className="space-y-6">
+                <div className="flex justify-between items-end">
+                  <label className="text-xs font-bold text-ink uppercase tracking-widest opacity-60">Intelligence Content</label>
                   <button 
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={isExtracting}
-                    className="flex items-center gap-1.5 text-[11px] font-bold text-indigo-600 hover:text-indigo-700 transition-colors disabled:opacity-50"
+                    className="flex items-center gap-3 text-xs font-bold text-accent hover:opacity-60 transition-all disabled:opacity-30 uppercase tracking-widest"
                   >
-                    {isExtracting ? <Loader2 size={12} className="animate-spin" /> : <Upload size={12} />}
-                    {isExtracting ? extractionStatus : 'Upload Document'}
+                    {isExtracting ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} strokeWidth={3} />}
+                    {isExtracting ? extractionStatus : 'Ingest Document'}
                   </button>
                   <input 
                     type="file" 
@@ -522,43 +513,43 @@ export default function KnowledgeBaseManager({ userId }: Props) {
                 </div>
                 <textarea 
                   required
-                  rows={8}
+                  rows={6}
                   value={formData.content}
                   onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none resize-none text-sm leading-relaxed"
-                  placeholder="Paste text or upload a document..."
+                  className="w-full p-8 bg-slate-50 border-2 border-ink focus:border-accent outline-none resize-none text-lg leading-relaxed transition-all duration-300 uppercase"
+                  placeholder="The core intelligence data goes here..."
                 />
               </div>
 
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">Summary</label>
+              <div className="space-y-6">
+                <label className="text-xs font-bold text-ink uppercase tracking-widest opacity-60">Executive Summary</label>
                 <textarea 
                   required
-                  rows={3}
+                  rows={2}
                   value={formData.summary}
                   onChange={(e) => setFormData({ ...formData, summary: e.target.value })}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none resize-none text-sm leading-relaxed"
-                  placeholder="A brief summary of the content..."
+                  className="w-full p-8 bg-slate-50 border-2 border-ink focus:border-accent outline-none resize-none text-lg leading-relaxed transition-all duration-300 uppercase"
+                  placeholder="A refined distillation of the intelligence..."
                 />
               </div>
 
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">Tags</label>
+              <div className="space-y-4">
+                <label className="text-xs font-bold text-ink uppercase tracking-widest opacity-60">Classification Tags</label>
                 <input 
                   type="text"
                   value={formData.tags}
                   onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none text-sm"
-                  placeholder="Comma separated tags..."
+                  className="w-full minimal-input uppercase"
+                  placeholder="Separated by commas..."
                 />
               </div>
 
               <button 
                 type="submit"
-                className="w-full flex items-center justify-center gap-2 bg-indigo-600 text-white py-3.5 rounded-xl hover:bg-indigo-700 transition-all font-bold shadow-sm"
+                className="w-full flex items-center justify-center gap-4 bg-ink text-paper py-6 border-4 border-ink hover:bg-accent hover:border-accent active:translate-x-1 active:translate-y-1 transition-all duration-200 font-bold text-xl uppercase tracking-[0.2em] mt-12"
               >
-                <Save size={18} />
-                {editingChunk ? 'Save Changes' : 'Add to Repository'}
+                <Save size={24} strokeWidth={2} />
+                <span>{editingChunk ? 'Commit Changes' : 'Commit to Repository'}</span>
               </button>
             </form>
           </div>
@@ -566,19 +557,19 @@ export default function KnowledgeBaseManager({ userId }: Props) {
       )}
 
       {confirmDelete && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 z-[60]">
-          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl p-8 animate-in fade-in zoom-in duration-200">
-            <h3 className="text-xl font-bold text-slate-900 mb-2">Confirm Deletion</h3>
-            <p className="text-slate-500 text-sm mb-8 leading-relaxed">
+        <div className="fixed inset-0 bg-ink/40 backdrop-blur-md flex items-center justify-center p-12 z-[60]">
+          <div className="bg-white w-full max-w-xl border-4 border-ink p-16 animate-in fade-in zoom-in-95 duration-200">
+            <h3 className="text-4xl font-bold text-ink mb-6 uppercase">Archive Intelligence?</h3>
+            <p className="text-slate-500 text-lg mb-12 leading-relaxed font-bold uppercase">
               {confirmDelete.type === 'chunk' 
-                ? "Are you sure you want to delete this knowledge entry? This action cannot be undone."
-                : `Are you sure you want to remove the "${confirmDelete.name}" category? ${confirmDelete.count && confirmDelete.count > 0 ? `This will delete ALL ${confirmDelete.count} entries within it.` : "This category is currently empty and will be hidden from your view."}`
+                ? "This intelligence will be purged from the active repository. This action is irreversible."
+                : `The "${confirmDelete.name}" classification will be archived. ${confirmDelete.count && confirmDelete.count > 0 ? `This will purge ALL ${confirmDelete.count} associated intelligence entries.` : "This classification is currently vacant."}`
               }
             </p>
-            <div className="flex gap-3">
+            <div className="flex gap-6">
               <button 
                 onClick={() => setConfirmDelete(null)}
-                className="flex-1 px-4 py-2.5 bg-slate-100 text-slate-600 rounded-xl hover:bg-slate-200 transition-all font-bold text-sm"
+                className="flex-1 px-8 py-5 bg-slate-100 text-slate-400 border-2 border-transparent hover:border-ink transition-all font-bold text-sm uppercase tracking-widest"
               >
                 Cancel
               </button>
@@ -590,9 +581,9 @@ export default function KnowledgeBaseManager({ userId }: Props) {
                     executeDeleteCategory(confirmDelete.name);
                   }
                 }}
-                className="flex-1 px-4 py-2.5 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-all font-bold text-sm shadow-sm"
+                className="flex-1 px-8 py-5 bg-red-500 text-white border-2 border-ink hover:bg-red-600 transition-all font-bold text-sm uppercase tracking-widest shadow-[4px_4px_0px_0px_rgba(26,26,26,1)]"
               >
-                Delete
+                Archive
               </button>
             </div>
           </div>

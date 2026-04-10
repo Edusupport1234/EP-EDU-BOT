@@ -1,8 +1,36 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Pixelify+Sans:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  --font-pixel: "Pixelify Sans", cursive;
+  
+  --color-paper: #fdfcfb;
+  --color-ink: #1a1a1a;
+  --color-accent: #5a5a40; /* Muted olive */
+  --color-border: rgba(26, 26, 26, 0.08);
+}
+
+@layer base {
+  body {
+    @apply bg-paper text-ink antialiased selection:bg-accent/10 selection:text-accent font-pixel text-lg;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-pixel;
+  }
+}
+
+.bougie-card {
+  @apply bg-white border-2 border-ink rounded-none transition-all duration-300 hover:shadow-[8px_8px_0px_0px_rgba(26,26,26,1)] hover:-translate-x-1 hover:-translate-y-1;
+}
+
+.minimal-input {
+  @apply bg-transparent border-b-2 border-ink py-3 focus:border-accent outline-none transition-all duration-300 placeholder:text-slate-300 font-pixel text-xl;
+}
+
+.glass-panel {
+  @apply bg-white/70 backdrop-blur-xl border-2 border-ink;
 }
 
 :root {

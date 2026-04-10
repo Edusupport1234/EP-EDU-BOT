@@ -18,12 +18,46 @@
         "fileName": { "type": "string", "description": "The name of the uploaded file" }
       },
       "required": ["id", "title", "content", "summary", "category", "userId"]
+    },
+    "chatSessions": {
+      "title": "Chat Session",
+      "description": "A conversation session between a user and the AI.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "lastMessage": { "type": "string" },
+        "updatedAt": { "type": "number" },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["id", "userId", "title", "lastMessage", "updatedAt", "createdAt"]
+    },
+    "chatMessages": {
+      "title": "Chat Message",
+      "description": "An individual message within a chat session.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "role": { "type": "string", "enum": ["user", "model"] },
+        "content": { "type": "string" },
+        "timestamp": { "type": "number" }
+      },
+      "required": ["id", "role", "content", "timestamp"]
     }
   },
   "firestore": {
     "/knowledgeChunks/{chunkId}": {
       "schema": "knowledgeChunks",
       "description": "User-managed knowledge base for the chatbot."
+    },
+    "/chatSessions/{sessionId}": {
+      "schema": "chatSessions",
+      "description": "User chat sessions."
+    },
+    "/chatSessions/{sessionId}/messages/{messageId}": {
+      "schema": "chatMessages",
+      "description": "Messages within a specific chat session."
     }
   }
 }
