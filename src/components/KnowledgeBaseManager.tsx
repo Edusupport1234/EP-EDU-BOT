@@ -241,7 +241,7 @@ export default function KnowledgeBaseManager({ userId }: Props) {
 
     if (formData.fileType) newChunk.fileType = formData.fileType;
     if (formData.fileName) newChunk.fileName = formData.fileName;
-    // imageData is removed from saving as per user request
+    if (formData.imageData) newChunk.imageData = formData.imageData;
 
     try {
       await setDoc(doc(db, 'knowledgeChunks', id), newChunk);
@@ -403,6 +403,17 @@ export default function KnowledgeBaseManager({ userId }: Props) {
                           <span>{new Date(chunk.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                         </div>
                       </div>
+
+                      {chunk.imageData && (
+                        <div className="mb-10 border-4 border-ink shadow-[4px_4px_0px_0px_rgba(26,26,26,1)] overflow-hidden h-48 bg-white">
+                          <img 
+                            src={chunk.imageData} 
+                            alt={chunk.title} 
+                            className="w-full h-full object-cover grayscale hover:grayscale-0 transition-all duration-500"
+                            referrerPolicy="no-referrer"
+                          />
+                        </div>
+                      )}
 
                       {chunk.summary && (
                         <div className="mb-10 p-6 bg-accent/5 border-l-4 border-accent">

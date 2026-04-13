@@ -226,7 +226,7 @@ export default function Chatbot({ userId }: Props) {
               If the answer is not in the knowledge base, politely inform the user that you don't have that information yet.
               
               KNOWLEDGE BASE:
-              ${knowledge.map(k => `--- ${k.category}: ${k.title} ---\nSUMMARY: ${k.summary}\nCONTENT: ${k.content}`).join('\n\n')}
+              ${knowledge.map(k => `--- ID: ${k.id} | ${k.category}: ${k.title} ---\nSUMMARY: ${k.summary}\nCONTENT: ${k.content}\nIMAGE_AVAILABLE: ${k.imageData ? 'YES' : 'NO'}`).join('\n\n')}
               
               USER QUESTION:
               ${input}
@@ -234,11 +234,12 @@ export default function Chatbot({ userId }: Props) {
               INSTRUCTIONS:
               1. Answer based ONLY on the knowledge base.
               2. Use the SUMMARY to quickly identify context and the CONTENT for detailed answers.
+              3. If the user asks for an image, or if the information you are providing is best represented by an image that is available (IMAGE_AVAILABLE: YES), you MUST include the tag [IMAGE:chunk_id] in your response where chunk_id is the ID provided in the knowledge base.
             ` }]
           }
         ],
         config: {
-          systemInstruction: "You are a precise AI assistant that strictly follows the provided knowledge context. Keep answers concise and professional.",
+          systemInstruction: "You are a precise AI assistant that strictly follows the provided knowledge context. Keep answers concise and professional. When referencing available images, always use the [IMAGE:id] format.",
         }
       });
 
@@ -427,7 +428,30 @@ export default function Chatbot({ userId }: Props) {
                     "prose prose-lg max-w-none font-bold leading-relaxed uppercase",
                     msg.role === 'user' ? "prose-invert" : "prose-slate"
                   )}>
-                    <ReactMarkdown>{msg.content}</ReactMarkdown>
+                    {msg.content.split(/(\[IMAGE:[^\]]+\])/g).map((part, index) => {
+                      const match = part.match(/\[IMAGE:([^\]]+)\]/);
+                      if (match) {
+                        const chunkId = match[1];
+                        const chunk = knowledge.find(k => k.id === chunkId);
+                        if (chunk?.imageData) {
+                          return (
+                            <div key={index} className="my-10 border-4 border-ink shadow-[8px_8px_0px_0px_rgba(26,26,26,1)] overflow-hidden bg-white">
+                              <img 
+                                src={chunk.imageData} 
+                                alt={chunk.title} 
+                                className="w-full h-auto grayscale hover:grayscale-0 transition-all duration-500"
+                                referrerPolicy="no-referrer"
+                              />
+                              <div className="bg-ink text-paper p-6 text-sm font-bold uppercase tracking-widest border-t-4 border-ink">
+                                Intelligence Visualization: {chunk.title}
+                              </div>
+                            </div>
+                          );
+                        }
+                        return null;
+                      }
+                      return <ReactMarkdown key={index}>{part}</ReactMarkdown>;
+                    })}
                   </div>
                 </div>
               </div>
