@@ -11,6 +11,10 @@ export interface KnowledgeChunk {
   fileType?: string;
   fileName?: string;
   imageData?: string;
+  mediaUrl?: string;
+  mediaType?: 'audio' | 'video';
+  deletedAt?: number;
+  isFavorite?: boolean;
 }
 
 export interface ChatMessage {
@@ -27,5 +31,16 @@ export interface ChatSession {
   title: string;
   lastMessage: string;
   updatedAt: number;
+  createdAt: number;
+}
+
+export interface CalendarEvent {
+  id: string;
+  userId: string;
+  title: string;
+  description?: string;
+  startTime: number;
+  endTime: number;
+  color?: string;
   createdAt: number;
 }

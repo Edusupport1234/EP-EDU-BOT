@@ -1,17 +1,42 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Pixelify+Sans:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
-@theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
-  --font-pixel: "Pixelify Sans", cursive;
-  
-  --color-paper: #fdfcfb;
+:root {
+  --color-paper: #F4EDDC;
   --color-ink: #1a1a1a;
-  --color-accent: #5a5a40; /* Muted olive */
+  --color-accent: #5a5a40;
   --color-border: rgba(26, 26, 26, 0.08);
+  --color-card-bg: #F4EDDC;
+  --color-shadow: #1a1a1a;
+}
+
+[data-theme='dark'] {
+  color-scheme: dark;
+  --color-paper: #181818;
+  --color-ink: #F4EDDC;
+  --color-accent: #7a7a5a;
+  --color-border: rgba(244, 237, 220, 0.1);
+  --color-card-bg: #242424;
+  --color-shadow: #0a0a0a;
+}
+
+@theme {
+  --font-sans: "Times New Roman", Times, serif;
+  --font-pixel: "Times New Roman", Times, serif;
+  
+  --color-paper: var(--color-paper);
+  --color-ink: var(--color-ink);
+  --color-accent: var(--color-accent);
+  --color-border: var(--color-border);
+  --color-card-bg: var(--color-card-bg);
+  --color-shadow: var(--color-shadow);
+  --color-ink-muted: color-mix(in srgb, var(--color-ink), transparent 30%);
 }
 
 @layer base {
+  * {
+    @apply transition-colors duration-300;
+  }
+  
   body {
     @apply bg-paper text-ink antialiased selection:bg-accent/10 selection:text-accent font-pixel text-lg;
   }
@@ -22,37 +47,13 @@
 }
 
 .bougie-card {
-  @apply bg-white border-2 border-ink rounded-none transition-all duration-300 hover:shadow-[8px_8px_0px_0px_rgba(26,26,26,1)] hover:-translate-x-1 hover:-translate-y-1;
+  @apply bg-card-bg border-2 border-ink rounded-none transition-all duration-300 hover:shadow-[8px_8px_0px_0px_var(--color-shadow)] hover:-translate-x-1 hover:-translate-y-1;
 }
 
 .minimal-input {
-  @apply bg-transparent border-b-2 border-ink py-3 focus:border-accent outline-none transition-all duration-300 placeholder:text-slate-300 font-pixel text-xl;
+  @apply bg-transparent border-b-2 border-ink py-3 focus:border-accent outline-none transition-all duration-300 placeholder:text-ink-muted font-pixel text-xl;
 }
 
 .glass-panel {
-  @apply bg-white/70 backdrop-blur-xl border-2 border-ink;
-}
-
-:root {
-  --bg-main: #f8fafc;
-  --sidebar-bg: #ffffff;
-  --accent: #4f46e5;
-  --accent-hover: #4338ca;
-  --text-primary: #0f172a;
-  --text-secondary: #475569;
-  --border-color: #e2e8f0;
-}
-
-@layer base {
-  body {
-    @apply bg-[var(--bg-main)] text-[var(--text-primary)] font-sans;
-  }
-}
-
-.glass-card {
-  @apply bg-white/80 backdrop-blur-md border border-white/20 shadow-sm;
-}
-
-.modern-shadow {
-  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  @apply bg-card-bg/70 backdrop-blur-xl border-2 border-ink;
 }

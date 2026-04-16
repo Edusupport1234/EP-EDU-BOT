@@ -1,5 +1,5 @@
 {
   "name": "Knowledge-Based Chatbot",
   "description": "A chatbot that answers questions based on a user-managed knowledge base. Users can add, edit, and delete data to 'train' the AI.",
-  "requestFramePermissions": []
+  "requestFramePermissions": ["microphone"]
 }

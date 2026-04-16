@@ -17,6 +17,7 @@ service cloud.firestore {
     //   - updatedAt: number (required) - last update timestamp
     //   - userId: string (required) - the user who owns this knowledge
     //   - imageData: string (optional) - base64 encoded image data
+    //   - isFavorite: boolean (optional) - whether the entry is favorited
     //
     // ===============================================================
 
@@ -32,29 +33,33 @@ service cloud.firestore {
     }
 
     function isValidKnowledgeChunk(data) {
-      let allowedFields = ['id', 'title', 'content', 'summary', 'userId', 'createdAt', 'updatedAt', 'category', 'tags', 'fileType', 'fileName', 'imageData'];
+      let allowedFields = ['id', 'title', 'content', 'summary', 'userId', 'createdAt', 'updatedAt', 'category', 'tags', 'fileType', 'fileName', 'imageData', 'mediaUrl', 'mediaType', 'deletedAt', 'isFavorite'];
       let requiredFields = ['id', 'title', 'content', 'summary', 'userId', 'createdAt', 'updatedAt', 'category'];
       
       return data.keys().hasAll(requiredFields) &&
              data.keys().hasOnly(allowedFields) &&
              data.id is string && data.id.size() > 0 && data.id.size() < 100 &&
-             data.title is string && data.title.size() > 0 && data.title.size() < 200 &&
-             data.content is string && data.content.size() > 0 && data.content.size() < 10000 &&
-             data.summary is string && data.summary.size() > 0 && data.summary.size() < 1000 &&
-             data.category is string && data.category.size() > 0 && data.category.size() < 100 &&
+             data.title is string && data.title.size() > 0 && data.title.size() < 500 &&
+             data.content is string && data.content.size() > 0 && data.content.size() < 50000 &&
+             data.summary is string && data.summary.size() > 0 && data.summary.size() < 5000 &&
+             data.category is string && data.category.size() > 0 && data.category.size() < 200 &&
              data.userId is string && (data.userId == "default-user" || (isAuthenticated() && data.userId == request.auth.uid)) &&
              data.createdAt is number &&
              data.updatedAt is number &&
-             (!('tags' in data) || (data.tags is list && data.tags.size() <= 10)) &&
+             (!('tags' in data) || (data.tags is list && data.tags.size() <= 20)) &&
              (!('fileType' in data) || (data.fileType is string && data.fileType.size() < 100)) &&
              (!('fileName' in data) || (data.fileName is string && data.fileName.size() < 255)) &&
-             (!('imageData' in data) || (data.imageData is string && data.imageData.size() < 2000000)); // ~1.5MB limit for base64
+             (!('imageData' in data) || (data.imageData is string && data.imageData.size() < 5000000)) &&
+             (!('mediaUrl' in data) || (data.mediaUrl is string && data.mediaUrl.size() < 2000)) &&
+             (!('mediaType' in data) || (data.mediaType in ['audio', 'video'])) &&
+             (!('deletedAt' in data) || data.deletedAt is number) &&
+             (!('isFavorite' in data) || data.isFavorite is bool);
     }
 
     function isAdmin() {
       return isAuthenticated() &&
         (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
-          (request.auth.token.email == "Edusupport@ep-asia.com" && request.auth.token.email_verified == true)); // Default admin
+          (request.auth.token.email.lower() == "edusupport@ep-asia.com" && request.auth.token.email_verified == true)); // Default admin
     }
 
     function isValidChatSession(data) {
@@ -72,37 +77,61 @@ service cloud.firestore {
              data.content is string && data.content.size() < 10000;
     }
 
+    function isValidCalendarEvent(data) {
+      let allowedFields = ['userId', 'title', 'description', 'startTime', 'endTime', 'createdAt', 'color'];
+      let requiredFields = ['userId', 'title', 'startTime', 'endTime', 'createdAt'];
+      return data.keys().hasAll(requiredFields) && data.keys().hasOnly(allowedFields) &&
+             data.userId == request.auth.uid &&
+             data.title is string && data.title.size() > 0 && data.title.size() < 500 &&
+             (!('description' in data) || (data.description is string && data.description.size() < 2000)) &&
+             data.startTime is number &&
+             data.endTime is number &&
+             data.createdAt is number &&
+             (!('color' in data) || (data.color is string && data.color.matches("^#[0-9a-fA-F]{6}$")));
+    }
+
     // ===============================================================
     // Rules
     // ===============================================================
 
+    match /calendarEvents/{eventId} {
+      allow read, delete: if isAuthenticated() && (request.auth.uid == resource.data.userId || isAdmin());
+      allow create: if isAuthenticated() && isValidCalendarEvent(request.resource.data);
+      allow update: if isAuthenticated() && (request.auth.uid == resource.data.userId || isAdmin()) && isValidCalendarEvent(request.resource.data);
+    }
+
     match /chatSessions/{sessionId} {
-      allow read, delete: if isAuthenticated() && request.auth.uid == resource.data.userId;
+      allow read, delete: if isAuthenticated() && (request.auth.uid == resource.data.userId || isAdmin());
       allow create: if isAuthenticated() && isValidChatSession(request.resource.data);
-      allow update: if isAuthenticated() && request.auth.uid == resource.data.userId && isValidChatSession(request.resource.data);
+      allow update: if isAuthenticated() && (request.auth.uid == resource.data.userId || isAdmin()) && isValidChatSession(request.resource.data);
 
       match /messages/{messageId} {
-        allow read: if isAuthenticated() && get(/databases/$(database)/documents/chatSessions/$(sessionId)).data.userId == request.auth.uid;
-        allow create: if isAuthenticated() && get(/databases/$(database)/documents/chatSessions/$(sessionId)).data.userId == request.auth.uid && isValidChatMessage(request.resource.data);
-        allow delete: if isAuthenticated() && get(/databases/$(database)/documents/chatSessions/$(sessionId)).data.userId == request.auth.uid;
+        allow read: if isAuthenticated() && (get(/databases/$(database)/documents/chatSessions/$(sessionId)).data.userId == request.auth.uid || isAdmin());
+        allow create: if isAuthenticated() && (get(/databases/$(database)/documents/chatSessions/$(sessionId)).data.userId == request.auth.uid || isAdmin()) && isValidChatMessage(request.resource.data);
+        allow delete: if isAuthenticated() && (get(/databases/$(database)/documents/chatSessions/$(sessionId)).data.userId == request.auth.uid || isAdmin());
       }
     }
 
     match /knowledgeChunks/{chunkId} {
       // Users can only read their own knowledge chunks
-      allow read: if isOwner(resource.data.userId);
+      allow read: if isOwner(resource.data.userId) || isAdmin();
       
       // Users can only create their own knowledge chunks
-      allow create: if (isAuthenticated() || request.resource.data.userId == "default-user") && isValidKnowledgeChunk(request.resource.data) && isOwner(request.resource.data.userId);
+      allow create: if (isAuthenticated() || request.resource.data.userId == "default-user") && isValidKnowledgeChunk(request.resource.data) && (isOwner(request.resource.data.userId) || isAdmin());
       
       // Users can only update their own knowledge chunks
-      allow update: if isOwner(resource.data.userId) && 
+      allow update: if (isOwner(resource.data.userId) || isAdmin()) && 
                       isValidKnowledgeChunk(request.resource.data) && 
-                      request.resource.data.userId == resource.data.userId &&
-                      request.resource.data.createdAt == resource.data.createdAt;
+                      (request.resource.data.userId == resource.data.userId || isAdmin()) &&
+                      (request.resource.data.createdAt == resource.data.createdAt || isAdmin());
       
       // Users can only delete their own knowledge chunks
-      allow delete: if isOwner(resource.data.userId);
+      allow delete: if isOwner(resource.data.userId) || isAdmin();
+    }
+
+    match /deletedChunks/{chunkId} {
+      allow read, delete: if isOwner(resource.data.userId) || isAdmin();
+      allow create: if (isAuthenticated() || request.resource.data.userId == "default-user") && isValidKnowledgeChunk(request.resource.data) && (isOwner(request.resource.data.userId) || isAdmin());
     }
 
     match /users/{userId} {
